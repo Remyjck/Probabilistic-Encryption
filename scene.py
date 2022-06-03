@@ -88,6 +88,48 @@ class Cards(VGroup):
 
 
 class DetEncryption(Slide):
+    def create_keys(self, ekey, dkey, e, d):
+        self.play(
+            AnimationGroup(Create(e), Create(d), lag_ratio=1)
+        )
+        self.wait(duration=0.1)
+        self.pause()
+        self.wait(duration=0.1)
+        self.play(
+            AnimationGroup(
+                ReplacementTransform(e, ekey),
+                ReplacementTransform(d, dkey),
+                lag_ratio=0.5
+            )
+        )
+        self.wait(duration=0.1)
+        self.pause()
+
+    def shuffle(self, cards):
+        shuffling = cards.shuffle()
+        self.play(*shuffling)
+        self.wait(duration=0.1)
+        self.pause()
+
+    def encrypt(self, cards, framebox, key, e):
+        key.save_state()
+        encrypted_values = [crypt(card.get_value(), e.get_value()) for card in cards]
+        animations_newnums = [card.set_value(crypted) for card, crypted in zip(cards, encrypted_values)]
+        animations = [elem[0] for elem in animations_newnums]
+        newnums = [elem[1] for elem in animations_newnums]
+        self.play(
+            Create(framebox),
+            key.animate.move_to(cards.get_center()),
+            *animations
+        )
+        self.play(
+            Restore(key)
+        )
+        for card, num in zip(cards, newnums):
+            card[0][1] = num
+        self.wait(duration=0.1)
+        self.pause()
+
     def construct(self):
         self.wait(duration=0.1)
         self.pause()
@@ -103,12 +145,14 @@ class DetEncryption(Slide):
         )
         self.wait(duration=0.1)
         self.pause()
+
         self.play(
             ReplacementTransform(cards, cards_simple),
         )
-        self.wait(duration=0.1)
         cards = cards_simple
+        self.wait(duration=0.1)
         self.pause()
+
         self.play(
             cards.animate.bunch_up()
         )
@@ -121,96 +165,47 @@ class DetEncryption(Slide):
         dashed = DashedLine([0, -4, 0], [0, 4, 0], color=RED, dash_length=0.1)
         self.play(FadeIn(dashed))
         self.wait(duration=0.1)
+        self.pause()
 
         e1, d1 = generate_keys()
-        e2, d2 = generate_keys()
         e1 = Integer(int(e1)).move_to(LEFT*2)
-        e2 = Integer(int(e2)).move_to(RIGHT*2)
         d1 = Integer(int(d1)).next_to(e1, DOWN)
-        d2 = Integer(int(d2)).next_to(e2, DOWN)
         ekey1 = Tex("$e_1$", color=YELLOW).move_to(LEFT * 4.8 + UP * 3.4)
         dkey1 = Tex("$d_1$", color=YELLOW).next_to(ekey1, RIGHT).align_to(ekey1, DOWN)
+        self.create_keys(ekey1, dkey1, e1, d1)
+
+        e2, d2 = generate_keys()
+        e2 = Integer(int(e2)).move_to(RIGHT*2)
+        d2 = Integer(int(d2)).next_to(e2, DOWN)
         ekey2 = Tex("$e_2$", color=BLUE).move_to(RIGHT * 4.8 + UP * 3.4)
         dkey2 = Tex("$d_2$", color=BLUE).next_to(ekey2, RIGHT).align_to(ekey2, DOWN)
-
-        self.wait(duration=0.1)
-        self.pause()
-        self.play(
-            AnimationGroup(Create(e1), Create(d1), lag_ratio=1)
-        )
-        self.wait(duration=0.1)
-        self.pause()
-        self.wait(duration=0.1)
-        self.play(
-            AnimationGroup(
-                ReplacementTransform(e1, ekey1),
-                ReplacementTransform(d1, dkey1),
-                lag_ratio=0.5
-            )
-        )
-
-        self.wait(duration=0.1)
-        self.pause()
-        self.wait(duration=0.1)
-        self.play(
-            AnimationGroup(Create(e2), Create(d2), lag_ratio=1)
-        )
-        self.wait(duration=0.1)
-        self.pause()
-        self.wait(duration=0.1)
-        self.play(
-            AnimationGroup(
-                ReplacementTransform(e2, ekey2),
-                ReplacementTransform(d2, dkey2),
-                lag_ratio=0.5
-            )
-        )
-        self.wait(duration=0.1)
-        self.pause()
-        self.wait(duration=0.1)
+        self.create_keys(ekey2, dkey2, e2, d2)
 
         self.play(
             cards.animate.spread_out()
         )
         self.wait(duration=0.1)
         self.pause()
-        shuffling = cards.shuffle()
-        self.play(*shuffling)
-        self.wait(duration=0.1)
-        self.pause()
 
-        framebox1 = SurroundingRectangle(cards, buff=.1, color=YELLOW)
+        self.shuffle(cards)
+
         def keep_around_target(mob, target):
             mob.width = target.width + 0.2
             mob.height = target.height + 0.2
             mob.move_to(target.get_center())
+
+        framebox1 = SurroundingRectangle(cards, buff=.1, color=YELLOW)
         framebox1.add_updater(
             lambda x : keep_around_target(x, cards)
         )
 
-        ekey1.save_state()
-        encrypted_values = [crypt(card.get_value(), e1.get_value()) for card in cards]
-        animations_newnums = [card.set_value(crypted) for card, crypted in zip(cards, encrypted_values)]
-        animations = [elem[0] for elem in animations_newnums]
-        newnums = [elem[1] for elem in animations_newnums]
-        self.play(
-            Create(framebox1),
-            ekey1.animate.move_to(cards.get_center()),
-            *animations
-        )
-        self.play(
-            Restore(ekey1)
-        )
-        for card, num in zip(cards, newnums):
-            card[0][1] = num
-        self.wait(duration=0.1)
-        self.pause()
+        self.encrypt(cards, framebox1, ekey1, e1)
 
         self.play(
             cards.animate.bunch_up()
         )
         self.play(
-            cards.animate.move_to(RIGHT*0.5 + UP*2)
+            cards.animate.move_to(RIGHT*0.5 + UP*2),
         )
         self.wait(duration=0.1)
         self.pause()
@@ -219,40 +214,16 @@ class DetEncryption(Slide):
             cards.animate.spread_out()
         )
         self.wait(duration=0.1)
-
-        shuffling = cards.shuffle()
-        self.play(
-            *shuffling
-        )
-        self.wait(duration=0.1)
         self.pause()
 
+        self.shuffle(cards)
+
         framebox2 = SurroundingRectangle(framebox1, buff=.1, color=BLUE)
-        def keep_around_target(mob, target):
-            mob.width = target.width + 0.2
-            mob.height = target.height + 0.2
-            mob.move_to(target.get_center())
         framebox2.add_updater(
             lambda x : keep_around_target(x, framebox1)
         )
 
-        ekey2.save_state()
-        encrypted_values = [crypt(card.get_value(), e2.get_value()) for card in cards]
-        animations_newnums = [card.set_value(crypted) for card, crypted in zip(cards, encrypted_values)]
-        animations = [elem[0] for elem in animations_newnums]
-        newnums = [elem[1] for elem in animations_newnums]
-        self.play(
-            Create(framebox2),
-            ekey2.animate.move_to(cards.get_center()),
-            *animations
-        )
-        self.play(
-            Restore(ekey2)
-        )
-        for card, num in zip(cards, newnums):
-            card[0][1] = num
-        self.wait(duration=0.1)
-        self.pause()
+        self.encrypt(cards, framebox2, ekey2, e2)
         
         self.play(
             cards.animate.bunch_up()
