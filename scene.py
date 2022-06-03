@@ -26,7 +26,7 @@ class Card(VGroup):
         )
         num = Integer(number=number).move_to(base.get_center())
         self.add(
-            VGroup(base, num)
+            VGroup(base, num).scale(0.9)
         )
     
     def set_value(self, number):
@@ -81,8 +81,9 @@ class Cards(VGroup):
 
         for i in range(self.num_cards):
             new_index = new_indices[i]
+            old_index = self[new_index].z_index
             self[new_index] = unshuffled[i]
-            self[new_index].z_index += new_index - i
+            self[new_index].z_index = old_index
 
         return animations
 
@@ -119,6 +120,25 @@ class DetEncryption(Slide):
         newnums = [elem[1] for elem in animations_newnums]
         self.play(
             Create(framebox),
+            key.animate.move_to(cards.get_center()),
+            *animations
+        )
+        self.play(
+            Restore(key)
+        )
+        for card, num in zip(cards, newnums):
+            card[0][1] = num
+        self.wait(duration=0.1)
+        self.pause()
+    
+    def decrypt(self, cards, framebox, key, d):
+        key.save_state()
+        encrypted_values = [crypt(card.get_value(), d.get_value()) for card in cards]
+        animations_newnums = [card.set_value(crypted) for card, crypted in zip(cards, encrypted_values)]
+        animations = [elem[0] for elem in animations_newnums]
+        newnums = [elem[1] for elem in animations_newnums]
+        self.play(
+            Uncreate(framebox),
             key.animate.move_to(cards.get_center()),
             *animations
         )
@@ -173,6 +193,8 @@ class DetEncryption(Slide):
         ekey1 = Tex("$e_1$", color=YELLOW).move_to(LEFT * 4.8 + UP * 3.4)
         dkey1 = Tex("$d_1$", color=YELLOW).next_to(ekey1, RIGHT).align_to(ekey1, DOWN)
         self.create_keys(ekey1, dkey1, e1, d1)
+        self.add_foreground_mobject(ekey1)
+        self.add_foreground_mobject(dkey1)
 
         e2, d2 = generate_keys()
         e2 = Integer(int(e2)).move_to(RIGHT*2)
@@ -180,6 +202,8 @@ class DetEncryption(Slide):
         ekey2 = Tex("$e_2$", color=BLUE).move_to(RIGHT * 4.8 + UP * 3.4)
         dkey2 = Tex("$d_2$", color=BLUE).next_to(ekey2, RIGHT).align_to(ekey2, DOWN)
         self.create_keys(ekey2, dkey2, e2, d2)
+        self.add_foreground_mobject(ekey2)
+        self.add_foreground_mobject(dkey2)
 
         self.play(
             cards.animate.spread_out()
@@ -205,7 +229,7 @@ class DetEncryption(Slide):
             cards.animate.bunch_up()
         )
         self.play(
-            cards.animate.move_to(RIGHT*0.5 + UP*2),
+            cards.animate.move_to(RIGHT*1 + UP*2),
         )
         self.wait(duration=0.1)
         self.pause()
@@ -218,6 +242,28 @@ class DetEncryption(Slide):
 
         self.shuffle(cards)
 
+        card1 = cards[-1]
+        card2 = cards[-2]
+        cards.remove(card1)
+        cards.remove(card2)
+        cards.num_cards -= 2
+        pcards1 = VGroup(card1, card2)
+        self.add(pcards1)
+        pframebox1 = SurroundingRectangle(pcards1, buff=.1, color=YELLOW)
+        pframebox1.add_updater(
+            lambda x : keep_around_target(x, pcards1)
+        )
+        self.play(
+            Create(pframebox1)
+        )
+        self.play(
+            pcards1.animate.move_to(LEFT*1.3 + UP*3)
+        )
+        self.wait(duration=0.1)
+        self.pause()
+
+        self.decrypt(pcards1, pframebox1, dkey1, d1) 
+
         framebox2 = SurroundingRectangle(framebox1, buff=.1, color=BLUE)
         framebox2.add_updater(
             lambda x : keep_around_target(x, framebox1)
@@ -227,6 +273,35 @@ class DetEncryption(Slide):
         
         self.play(
             cards.animate.bunch_up()
+        )
+        self.play(
+            cards.animate.move_to(LEFT*6.2 + UP*1)
+        )
+        self.play(
+            cards.animate.bunch_out()
+        )
+        self.wait(duration=0.1)
+        self.pause
+
+        self.decrypt(cards, framebox1, dkey1, d1)
+
+        self.shuffle(cards)
+        
+        card3 = cards[-1]
+        card4 = cards[-2]
+        cards.remove(card3)
+        cards.remove(card4)
+        cards.num_cards -= 2
+        pcards2 = VGroup(card3, card4)
+        pframebox2 = SurroundingRectangle(pcards2, buff=.1, color=BLUE)
+        pframebox2.add_update(
+            lambda x : keep_around_target(x, pcards2)
+        )
+        self.play(
+            Create(pframebox2)
+        )
+        self.play(
+            pcards2.move_to(RIGHT * 1.3 + UP*3)
         )
         self.wait(duration=0.1)
 
