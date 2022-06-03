@@ -87,6 +87,10 @@ class Cards(VGroup):
 
         return animations
 
+def keep_around_target(mob, target):
+    mob.width = target.width + 0.2
+    mob.height = target.height + 0.2
+    mob.move_to(target.get_center())
 
 class DetEncryption(Slide):
     def create_keys(self, ekey, dkey, e, d):
@@ -131,22 +135,29 @@ class DetEncryption(Slide):
         self.wait(duration=0.1)
         self.pause()
     
-    def decrypt(self, cards, framebox, key, d):
+    def decrypt(self, cards, framebox, key, d, framebox2 = None):
         key.save_state()
         encrypted_values = [crypt(card.get_value(), d.get_value()) for card in cards]
         animations_newnums = [card.set_value(crypted) for card, crypted in zip(cards, encrypted_values)]
         animations = [elem[0] for elem in animations_newnums]
         newnums = [elem[1] for elem in animations_newnums]
+        if framebox2 is not None:
+            new_framebox2 = SurroundingRectangle(cards, buff=0.1, color=BLUE)
+            new_framebox2.add_updater(
+                lambda x : keep_around_target(x, cards)
+            )
+            animations.append(ReplacementTransform(framebox2, new_framebox2))
         self.play(
+            *animations
             Uncreate(framebox),
             key.animate.move_to(cards.get_center()),
-            *animations
         )
         self.play(
             Restore(key)
         )
         for card, num in zip(cards, newnums):
             card[0][1] = num
+        framebox2 = new_framebox2
         self.wait(duration=0.1)
         self.pause()
 
@@ -213,10 +224,6 @@ class DetEncryption(Slide):
 
         self.shuffle(cards)
 
-        def keep_around_target(mob, target):
-            mob.width = target.width + 0.2
-            mob.height = target.height + 0.2
-            mob.move_to(target.get_center())
 
         framebox1 = SurroundingRectangle(cards, buff=.1, color=YELLOW)
         framebox1.add_updater(
@@ -229,7 +236,7 @@ class DetEncryption(Slide):
             cards.animate.bunch_up()
         )
         self.play(
-            cards.animate.move_to(RIGHT*1 + UP*2),
+            cards.animate.move_to(RIGHT*0.6 + UP*2),
         )
         self.wait(duration=0.1)
         self.pause()
@@ -278,12 +285,12 @@ class DetEncryption(Slide):
             cards.animate.move_to(LEFT*6.2 + UP*1)
         )
         self.play(
-            cards.animate.bunch_out()
+            cards.animate.spread_out()
         )
         self.wait(duration=0.1)
-        self.pause
+        self.pause()
 
-        self.decrypt(cards, framebox1, dkey1, d1)
+        self.decrypt(cards, framebox1, dkey1, d1, framebox2)
 
         self.shuffle(cards)
         
@@ -294,16 +301,26 @@ class DetEncryption(Slide):
         cards.num_cards -= 2
         pcards2 = VGroup(card3, card4)
         pframebox2 = SurroundingRectangle(pcards2, buff=.1, color=BLUE)
-        pframebox2.add_update(
+        pframebox2.add_updater(
             lambda x : keep_around_target(x, pcards2)
         )
         self.play(
             Create(pframebox2)
         )
         self.play(
-            pcards2.move_to(RIGHT * 1.3 + UP*3)
+            pcards2.animate.move_to(RIGHT * 1.3 + UP*3)
         )
         self.wait(duration=0.1)
+        self.pause()
+
+        self.decrypt(pcards2, pframebox2, dkey2, d2)
+
+        self.play(
+            FadeOut(ekey1),
+            FadeOut(dkey1)
+        )
+        self.wait(duration=0.1)
+        
 
         self.pause()
         self.wait(duration=0.1)
