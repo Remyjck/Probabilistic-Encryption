@@ -87,9 +87,9 @@ class Cards(VGroup):
 
         return animations
 
-def keep_around_target(mob, target):
-    mob.width = target.width + 0.2
-    mob.height = target.height + 0.2
+def keep_around_target(mob, target, buff=0.2):
+    mob.width = target.width + buff
+    mob.height = target.height + buff 
     mob.move_to(target.get_center())
 
 class DetEncryption(Slide):
@@ -157,10 +157,10 @@ class DetEncryption(Slide):
         )
         for card, num in zip(cards, newnums):
             card[0][1] = num
-        if framebox2 is not None:
-            framebox2 = new_framebox2
         self.wait(duration=0.1)
         self.pause()
+        if framebox2 is not None:
+            return new_framebox2
 
     def construct(self):
         self.wait(duration=0.1)
@@ -283,7 +283,7 @@ class DetEncryption(Slide):
             cards.animate.bunch_up()
         )
         self.play(
-            cards.animate.move_to(LEFT*6.2 + UP*1.5)
+            cards.animate.move_to(LEFT*6.2 + UP*1.3)
         )
         self.play(
             cards.animate.spread_out()
@@ -291,7 +291,7 @@ class DetEncryption(Slide):
         self.wait(duration=0.1)
         self.pause()
 
-        self.decrypt(cards, framebox1, dkey1, d1, framebox2)
+        framebox2 = self.decrypt(cards, framebox1, dkey1, d1, framebox2)
 
         self.shuffle(cards)
         
@@ -320,7 +320,7 @@ class DetEncryption(Slide):
             FadeOut(ekey1),
             FadeOut(dkey1)
         )
-        ekeys1 = Tex("[$e_1$, $\dots$, $e_{20}$]", color=YELLOW).move_to(LEFT*4 + UP*3)
+        ekeys1 = Tex("[$e_1$, $\dots$, $e_{20}$]", color=YELLOW).move_to(LEFT*5 + UP*3)
         self.play(
             Create(ekeys1)
         )
@@ -333,7 +333,7 @@ class DetEncryption(Slide):
         for card in cards:
             box = SurroundingRectangle(card, buff=.1, color=YELLOW)
             box.add_updater(
-                lambda x, card=card: keep_around_target(x, card)
+                lambda x, card=card: keep_around_target(x, card, 0)
             )
             frameboxes1.append(box)
             animations.append(Create(box))
@@ -349,7 +349,7 @@ class DetEncryption(Slide):
         self.pause()
 
         self.play(
-            cards.animate.move_to(RIGHT*0.8 + UP*1.5)
+            cards.animate.shift(RIGHT*7)
         )
         self.wait(duration=0.1)
         self.pause()
@@ -373,10 +373,10 @@ class DetEncryption(Slide):
         for card, framebox1 in zip(cards, frameboxes1):
             box = SurroundingRectangle(card, buff=.1, color=BLUE)
             box.add_updater(
-                lambda x : keep_around_target(x, framebox1)
+                lambda x, framebox1=framebox1: keep_around_target(x, framebox1, 0.1)
             )
-            frameboxes2.add(box)
-            animations.add(Create(box))
+            frameboxes2.append(box)
+            animations.append(Create(box))
         
         self.play(
             *animations,
