@@ -15,7 +15,7 @@ class DoubleCard(VGroup):
         num_1 = Integer(number=number).scale(0.8).align_to(base, UR).shift(0.08*DL)
         num_2 = Integer(number=number).scale(0.8).align_to(base, DL).shift(0.08*UR).rotate(PI)
         self.add(
-            VGroup(base, num_1, num_2)
+            VGroup(base, num_1, num_2).scale(0.9)
         )
 
 class Card(VGroup):
@@ -50,9 +50,9 @@ class Cards(VGroup):
             row = i // 6
             col = i % 6
             if double:
-                card = DoubleCard(i+1, color=color).shift((1.1*RIGHT)*col+(1.6*DOWN)*row)
+                card = DoubleCard(i+1, color=color).shift((1.05*RIGHT)*col+(1.4*DOWN)*row)
             else:
-                card = Card(i+1, color=color).shift((1.1*RIGHT)*col+(1.6*DOWN)*row)
+                card = Card(i+1, color=color).shift((1.05*RIGHT)*col+(1.4*DOWN)*row)
             self.add(card)
 
     def bunch_up(self):
@@ -65,7 +65,7 @@ class Cards(VGroup):
         for i in range(1, self.num_cards):
             row = i // 6
             col = i % 6
-            self[i].shift((1.1*RIGHT)*col + (1.6)*DOWN*row)
+            self[i].shift((1.05*RIGHT)*col + (1.4)*DOWN*row)
     
     def shuffle(self):
         animations = []
@@ -77,7 +77,7 @@ class Cards(VGroup):
             i = new_indices.index(new_index)
             row = new_index // 6
             col = new_index % 6
-            animations.append(self[i].animate.move_to(first_position + (1.1*RIGHT)*col + (1.6)*DOWN*row))
+            animations.append(self[i].animate.move_to(first_position + (1.05*RIGHT)*col + (1.4)*DOWN*row))
 
         for i in range(self.num_cards):
             new_index = new_indices[i]
@@ -148,7 +148,7 @@ class DetEncryption(Slide):
             )
             animations.append(ReplacementTransform(framebox2, new_framebox2))
         self.play(
-            *animations
+            *animations,
             Uncreate(framebox),
             key.animate.move_to(cards.get_center()),
         )
@@ -157,7 +157,8 @@ class DetEncryption(Slide):
         )
         for card, num in zip(cards, newnums):
             card[0][1] = num
-        framebox2 = new_framebox2
+        if framebox2 is not None:
+            framebox2 = new_framebox2
         self.wait(duration=0.1)
         self.pause()
 
@@ -236,7 +237,7 @@ class DetEncryption(Slide):
             cards.animate.bunch_up()
         )
         self.play(
-            cards.animate.move_to(RIGHT*0.6 + UP*2),
+            cards.animate.move_to(RIGHT*0.8 + UP*2),
         )
         self.wait(duration=0.1)
         self.pause()
@@ -282,7 +283,7 @@ class DetEncryption(Slide):
             cards.animate.bunch_up()
         )
         self.play(
-            cards.animate.move_to(LEFT*6.2 + UP*1)
+            cards.animate.move_to(LEFT*6.2 + UP*1.5)
         )
         self.play(
             cards.animate.spread_out()
@@ -319,8 +320,72 @@ class DetEncryption(Slide):
             FadeOut(ekey1),
             FadeOut(dkey1)
         )
+        ekeys1 = Tex("[$e_1$, $\dots$, $e_{20}$]", color=YELLOW).move_to(LEFT*4 + UP*3)
+        self.play(
+            Create(ekeys1)
+        )
+        ekeys1.save_state()
         self.wait(duration=0.1)
+        self.pause()
+
+        frameboxes1 = []
+        animations = []
+        for card in cards:
+            box = SurroundingRectangle(card, buff=.1, color=YELLOW)
+            box.add_updater(
+                lambda x, card=card: keep_around_target(x, card)
+            )
+            frameboxes1.append(box)
+            animations.append(Create(box))
         
+        self.play(
+            *animations,
+            ekeys1.animate.move_to(cards.get_center())
+        )
+        self.play(
+            Restore(ekeys1)
+        )
+        self.wait(duration=0.1)
+        self.pause()
+
+        self.play(
+            cards.animate.move_to(RIGHT*0.8 + UP*1.5)
+        )
+        self.wait(duration=0.1)
+        self.pause()
+
+        self.decrypt(cards, framebox2, dkey2, d2)
+
+        self.play(
+            FadeOut(ekey2),
+            FadeOut(dkey2)
+        )
+        ekeys2 = Tex("[$e_1$, $\dots$, $e_{20}$]", color=BLUE).move_to(RIGHT*4 + UP*3)
+        self.play(
+            Create(ekeys2)
+        )
+        ekeys2.save_state()
+        self.wait(duration=0.1)
+        self.pause()
+
+        frameboxes2 = []
+        animations = []
+        for card, framebox1 in zip(cards, frameboxes1):
+            box = SurroundingRectangle(card, buff=.1, color=BLUE)
+            box.add_updater(
+                lambda x : keep_around_target(x, framebox1)
+            )
+            frameboxes2.add(box)
+            animations.add(Create(box))
+        
+        self.play(
+            *animations,
+            ekeys2.animate.move_to(cards.get_center())
+        )
+        self.play(
+            Restore(ekeys2)
+        )
+        self.wait(duration=0.1)
 
         self.pause()
         self.wait(duration=0.1)
