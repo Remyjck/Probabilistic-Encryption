@@ -189,7 +189,7 @@ class DetEncryption(Slide):
             cards.animate.bunch_up()
         )
         self.play(
-            cards.animate.move_to(LEFT*6.2 + UP * 2)
+            cards.animate.move_to(LEFT*6.2 + UP * 1.3)
         )
         self.wait(duration=0.1)
         self.pause()
@@ -237,7 +237,7 @@ class DetEncryption(Slide):
             cards.animate.bunch_up()
         )
         self.play(
-            cards.animate.move_to(RIGHT*0.8 + UP*2),
+            cards.animate.move_to(RIGHT*0.8 + UP*1.3),
         )
         self.wait(duration=0.1)
         self.pause()
@@ -280,13 +280,7 @@ class DetEncryption(Slide):
         self.encrypt(cards, framebox2, ekey2, e2)
         
         self.play(
-            cards.animate.bunch_up()
-        )
-        self.play(
-            cards.animate.move_to(LEFT*6.2 + UP*1.3)
-        )
-        self.play(
-            cards.animate.spread_out()
+            cards.animate.shift(LEFT*7)
         )
         self.wait(duration=0.1)
         self.pause()
@@ -384,6 +378,48 @@ class DetEncryption(Slide):
         )
         self.play(
             Restore(ekeys2)
+        )
+        self.wait(duration=0.1)
+        self.pause()
+
+        self.play(
+            cards.animate.bunch_up()
+        )
+        self.play(
+            cards.animate.move_to(UP*1)
+        )
+        self.wait()
+        self.pause()
+
+        dkeys1 = Tex("[$d_1$, $\dots$, $d_{20}$]", color=YELLOW).next_to(ekeys1, DOWN)
+        dkeys2 = Tex("[$d_1$, $\dots$, $d_{20}$]", color=BLUE).next_to(ekeys2, DOWN)
+        self.play(
+            Create(dkeys1),
+            Create(dkeys2)
+        )
+        self.wait(duration=0.1)
+        self.pause()
+
+        self.play(
+            cards[-1].animate.shift(DOWN*2)
+        )
+        self.wait(duration=0.1)
+        self.pause()
+
+        d1_sub = dkeys1[0][8:11]
+        d1_sub.save_state()
+        d2_sub = dkeys2[0][8:11]
+        d2_sub.save_state()
+
+        self.play(
+            d1_sub.animate.move_to(cards[-1].get_center()),
+            d2_sub.animate.move_to(cards[-1].get_center()),
+            Uncreate(frameboxes1[-1]),
+            Uncreate(frameboxes2[-1]),
+        )
+        self.play(
+            Restore(d1_sub),
+            Restore(d2_sub)
         )
         self.wait(duration=0.1)
 
